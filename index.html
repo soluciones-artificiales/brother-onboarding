@@ -332,7 +332,11 @@ function wirePlayButton(row, audioSrc) {
   if (btn) btn.addEventListener("click", function () { toggleBrotherAudio(audioSrc, btn); });
 }
 
-function brotherSay(text, then, audioSrc) {
+/* ---------- Ritmo humano: siempre 1-2s "tecleando" ---------- */
+function typingDelay() { return 1000 + Math.random() * 1000; }
+function typingDelaySlow() { return 2600 + Math.random() * 900; }
+
+function brotherSay(text, then, audioSrc, slow) {
   showTyping();
   setTimeout(function () {
     hideTyping();
@@ -341,7 +345,7 @@ function brotherSay(text, then, audioSrc) {
     setInputEnabled(true);
     waitingInput = true;
     if (then) then();
-  }, 900);
+  }, slow ? typingDelaySlow() : typingDelay());
 }
 
 function startConversation() {
@@ -365,14 +369,50 @@ function brotherSaySeq(items, then) {
       var row = addBubble((items[i].audio ? PLAY_SVG : "") + escapeHtml(items[i].text), "in");
       if (items[i].audio) wirePlayButton(row, items[i].audio);
       setTimeout(function () { next(i + 1); }, 600);
-    }, 900);
+    }, typingDelay());
   }
   next(0);
 }
 
 var QUESTION_AUDIO = [null, "a4.mp3", "a5.mp3", "a6.mp3"];
+var NUDGE_TEXT = "Me puedes contar hasta donde tú quieras, pero mientras más me cuentes, más te voy a poder ayudar.";
+
+/* 4 segundos después de una pregunta difícil, si aún no respondió: empujón cálido */
+function scheduleNudge() {
+  var s = step;
+  setTimeout(function () {
+    if (finished || !waitingInput || step !== s) return;
+    showTyping();
+    setTimeout(function () {
+      hideTyping();
+      var row = addBubble(PLAY_SVG + escapeHtml(NUDGE_TEXT), "in");
+      wirePlayButton(row, "a7.mp3");
+      setInputEnabled(true);
+      waitingInput = true;
+    }, typingDelay());
+  }, 4000);
+}
+
 function askQuestion(i) {
-  brotherSay(QUESTIONS[i], null, QUESTION_AUDIO[i]);
+  var slow = (i === 1); // "¿Qué te pesa ahorita?" se escribe lento, deliberado
+  brotherSay(QUESTIONS[i], function () {
+    if (i === 1 || i === 3) scheduleNudge(); // preguntas difíciles
+  }, QUESTION_AUDIO[i], slow);
+}
+
+/* Si pregunta "¿ayudar con qué?": misterio, sin avanzar el paso */
+var HELP_Q_RE = /(ayud\w*\s+(con\s+)?qu[eé])|(qu[eé][^?!.]*ayud\w*)|(c[oó]mo\s+[^?!.]*ayud\w*)/i;
+function answerHelpQuestion() {
+  waitingInput = false;
+  setInputEnabled(false);
+  showTyping();
+  setTimeout(function () {
+    hideTyping();
+    var row = addBubble(PLAY_SVG + escapeHtml("Eso ya lo verás."), "in");
+    wirePlayButton(row, "a8.mp3");
+    setInputEnabled(true);
+    waitingInput = true;
+  }, typingDelay());
 }
 
 async function saveAnswers() {
@@ -454,6 +494,7 @@ function onSend() {
   addBubble(escapeHtml(text), "out");
   inputEl.value = "";
   syncMicSend();
+  if (HELP_Q_RE.test(text)) { answerHelpQuestion(); return; }
   submitAnswer(text);
 }
 
