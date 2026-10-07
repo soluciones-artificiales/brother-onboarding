@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Brother (beta)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #0b141a;
+    display: flex;
+    justify-content: center;
+  }
+  #chat-shell {
+    width: 100%;
+    max-width: 480px;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    background: #ECE5DD;
+    position: relative;
+    overflow: hidden;
+  }
+  /* Header estilo WhatsApp */
+  #chat-header {
+    background: #075E54;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    gap: 12px;
+    flex-shrink: 0;
+    z-index: 2;
+    box-shadow: 0 1px 3px rgba(0,0,0,.25);
+  }
+  #avatar {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: #128C7E;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 600;
+    flex-shrink: 0;
+  }
+  #header-text { display: flex; flex-direction: column; line-height: 1.25; }
+  #header-name { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  #beta-tag {
+    font-size: 10px; font-weight: 500;
+    background: rgba(255,255,255,.22);
+    border-radius: 8px;
+    padding: 1px 7px;
+    letter-spacing: .3px;
+  }
+  #header-status { font-size: 12px; color: #d1e7dd; }
+  /* Área de mensajes */
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 14px 12px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .msg-row { display: flex; }
+  .msg-row.in { justify-content: flex-start; }
+  .msg-row.out { justify-content: flex-end; }
+  .bubble {
+    max-width: 82%;
+    padding: 7px 10px 5px;
+    border-radius: 8px;
+    font-size: 15.5px;
+    line-height: 1.4;
+    position: relative;
+    word-wrap: break-word;
+    box-shadow: 0 1px 1px rgba(0,0,0,.18);
+  }
+  .msg-row.in .bubble { background: #fff; border-top-left-radius: 0; }
+  .msg-row.in .bubble::before {
+    content: "";
+    position: absolute; top: 0; left: -7px;
+    border: 4px solid transparent;
+    border-top-color: #fff; border-right-color: #fff;
+  }
+  .msg-row.out .bubble { background: #DCF8C8; border-top-right-radius: 0; }
+  .msg-row.out .bubble::before {
+    content: "";
+    position: absolute; top: 0; right: -7px;
+    border: 4px solid transparent;
+    border-top-color: #DCF8C8; border-left-color: #DCF8C8;
+  }
+  .msg-time {
+    display: block;
+    text-align: right;
+    font-size: 11px;
+    color: #667781;
+    margin-top: 2px;
+  }
+  .msg-time .checks { color: #53bdeb; font-size: 12px; margin-left: 3px; }
+  /* Aviso de privacidad tipo chip */
+  .privacy-chip {
+    align-self: center;
+    background: #FFF3C4;
+    color: #54656f;
+    font-size: 12.5px;
+    line-height: 1.45;
+    text-align: center;
+    border-radius: 8px;
+    padding: 7px 12px;
+    max-width: 92%;
+    box-shadow: 0 1px 1px rgba(0,0,0,.15);
+    margin: 4px 0;
+  }
+  /* Indicador escribiendo */
+  .typing-dots { display: inline-flex; gap: 4px; padding: 4px 2px; }
+  .typing-dots span {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #8696a0;
+    animation: blink 1.2s infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: .2s; }
+  .typing-dots span:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%, 60%, 100% { opacity: .3; } 30% { opacity: 1; } }
+  /* Barra de input */
+  #input-bar {
+    background: #f0f0f0;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  #text-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    border-radius: 22px;
+    padding: 11px 16px;
+    font-size: 16px;
+    font-family: inherit;
+    background: #fff;
+    color: #111b21;
+  }
+  #send-btn {
+    width: 46px; height: 46px;
+    border: none;
+    border-radius: 50%;
+    background: #00a884;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  #send-btn:active { background: #008f6f; }
+  #send-btn:disabled { background: #a9c9c2; cursor: default; }
+  #send-btn svg { width: 22px; height: 22px; fill: #fff; }
+  .retry-btn {
+    margin-top: 6px;
+    background: #00a884; color: #fff;
+    border: none; border-radius: 16px;
+    padding: 7px 16px;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  .retry-btn:active { background: #008f6f; }
+</style>
+</head>
+<body>
+<div id="chat-shell">
+  <div id="chat-header">
+    <div id="avatar">B</div>
+    <div id="header-text">
+      <div id="header-name">Brother <span id="beta-tag">beta</span></div>
+      <div id="header-status">en línea</div>
+    </div>
+  </div>
+  <div id="messages"></div>
+  <div id="input-bar">
+    <input id="text-input" type="text" placeholder="Escribe un mensaje" autocomplete="off" enterkeyhint="send">
+    <button id="send-btn" aria-label="Enviar">
+      <svg viewBox="0 0 24 24"><path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CREDENCIALES DE SUPABASE: rellenar antes de publicar
+   ============================================================ */
+const SUPABASE_URL = "https://sjsnnumwshvtxahpdszq.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNqc25udW13c2h2dHhhaHBkc3pxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzNTE1MTgsImV4cCI6MjEwNjkyNzUxOH0.3PnzdavX4l2o8Q2Zj1jwwZtEDa3FiZnFGEJgNNREihc";
+/* ============================================================ */
+
+const messagesEl = document.getElementById("messages");
+const inputEl = document.getElementById("text-input");
+const sendBtn = document.getElementById("send-btn");
+
+const answers = { nombre: "", que_pesa: "", que_quiere: "", que_voz: "" };
+const answerKeys = ["nombre", "que_pesa", "que_quiere", "que_voz"];
+
+const QUESTIONS = [
+  "¿Cómo te llamas?",
+  "¿Qué te pesa ahorita?",
+  "¿Qué quieres de verdad?",
+  "¿Qué voz te dice que no puedes?"
+];
+
+let step = 0;            // índice de la próxima pregunta por hacer
+let waitingInput = false;
+let finished = false;
+
+function now() {
+  return new Date().toLocaleTimeString("es-VE", { hour: "2-digit", minute: "2-digit", hour12: false });
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function scrollDown() {
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function addBubble(text, from, extraHtml) {
+  const row = document.createElement("div");
+  row.className = "msg-row " + from;
+  const checks = from === "out" ? '<span class="checks">✓✓</span>' : "";
+  row.innerHTML = '<div class="bubble">' + text +
+    (extraHtml || "") +
+    '<span class="msg-time">' + now() + checks + "</span></div>";
+  messagesEl.appendChild(row);
+  scrollDown();
+  return row;
+}
+
+function addPrivacyChip() {
+  const chip = document.createElement("div");
+  chip.className = "privacy-chip";
+  chip.textContent = "Tus respuestas se guardan para crear tu experiencia personalizada. Solo las ve el equipo de Diego.";
+  messagesEl.appendChild(chip);
+  scrollDown();
+}
+
+let typingRow = null;
+function showTyping() {
+  typingRow = document.createElement("div");
+  typingRow.className = "msg-row in";
+  typingRow.innerHTML = '<div class="bubble"><span class="typing-dots"><span></span><span></span><span></span></span></div>';
+  messagesEl.appendChild(typingRow);
+  scrollDown();
+  setInputEnabled(false);
+}
+function hideTyping() {
+  if (typingRow) { typingRow.remove(); typingRow = null; }
+}
+
+function setInputEnabled(on) {
+  inputEl.disabled = !on;
+  sendBtn.disabled = !on;
+  if (on) inputEl.focus();
+}
+
+function brotherSay(text, then) {
+  showTyping();
+  setTimeout(function () {
+    hideTyping();
+    addBubble(escapeHtml(text), "in");
+    setInputEnabled(true);
+    waitingInput = true;
+    if (then) then();
+  }, 900);
+}
+
+function startConversation() {
+  setInputEnabled(false);
+  brotherSay("Hola. Soy Brother. Te voy a hacer unas preguntas para conocerte. ¿Empezamos?", function () {
+    // La primera respuesta del usuario confirma; luego va el aviso y la primera pregunta real.
+  });
+}
+
+function askQuestion(i) {
+  brotherSay(QUESTIONS[i], null);
+}
+
+async function saveAnswers() {
+  const res = await fetch(SUPABASE_URL + "/rest/v1/brother_onboarding", {
+    method: "POST",
+    headers: {
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+      "Content-Type": "application/json",
+      "Prefer": "return=minimal"
+    },
+    body: JSON.stringify({
+      nombre: answers.nombre,
+      que_pesa: answers.que_pesa,
+      que_quiere: answers.que_quiere,
+      que_voz: answers.que_voz
+    })
+  });
+  if (!res.ok) throw new Error("Supabase respondió " + res.status);
+}
+
+function finishConversation() {
+  showTyping();
+  saveAnswers().then(function () {
+    hideTyping();
+    const firstName = answers.nombre.split(" ")[0];
+    addBubble(escapeHtml("Gracias, " + firstName + ". Ya guardé tus respuestas. Tu historia viene en camino."), "in");
+    finished = true;
+    setInputEnabled(false);
+    inputEl.placeholder = "Conversación terminada";
+  }).catch(function () {
+    hideTyping();
+    const row = addBubble(
+      "Tuve un problema de conexión y no pude guardar tus respuestas. ¿Lo intentamos de nuevo?",
+      "in",
+      '<br><button class="retry-btn" id="retry-save">Reintentar</button>'
+    );
+    document.getElementById("retry-save").addEventListener("click", function () {
+      this.disabled = true;
+      finishConversation();
+    });
+    setInputEnabled(false);
+  });
+}
+
+function onSend() {
+  if (finished || !waitingInput) return;
+  const text = inputEl.value.trim();
+  if (!text) return;
+  waitingInput = false;
+  setInputEnabled(false);
+  addBubble(escapeHtml(text), "out");
+  inputEl.value = "";
+  var key = answerKeys[step];
+  answers[key] = text;
+  step++;
+  if (step < QUESTIONS.length) {
+    setTimeout(function () { askQuestion(step); }, 350);
+  } else {
+    setTimeout(finishConversation, 350);
+  }
+}
+
+sendBtn.addEventListener("click", onSend);
+inputEl.addEventListener("keydown", function (e) {
+  if (e.key === "Enter") onSend();
+});
+
+startConversation();
+</script>
+</body>
+</html>
