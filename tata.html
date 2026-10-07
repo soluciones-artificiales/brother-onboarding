@@ -332,6 +332,35 @@ function wirePlayButton(row, audioSrc) {
   if (btn) btn.addEventListener("click", function () { toggleBrotherAudio(audioSrc, btn); });
 }
 
+/* ---------- Voz viva de Tata: saludo generado en el momento (Edge Function -> ElevenLabs) ---------- */
+async function tataTtsUrl(text) {
+  const res = await fetch(SUPABASE_URL + "/functions/v1/tata-tts", {
+    method: "POST",
+    headers: {
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": "Bearer " + SUPABASE_ANON_KEY,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ text: text })
+  });
+  if (!res.ok) throw new Error("tts " + res.status);
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
+}
+function cleanFirstName(n) {
+  return String(n || "").trim().split(" ")[0].replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]/g, "").slice(0, 24);
+}
+function sayGreetingSeq(greeting, greetingAudioUrl) {
+  brotherSaySeq([
+    { text: greeting, audio: greetingAudioUrl },
+    { text: "te voy a hacer preguntas que tal vez sean un poco incómodas de responder.", audio: "t2.mp3" },
+    { text: "Pero si confías en mí, te prometo que valdrá la pena.", audio: "t3.mp3" }
+  ], function () {
+    addPrivacyChip();
+    setTimeout(function () { askQuestion(step); }, 700);
+  });
+}
+
 /* ---------- Ritmo humano: siempre 1-2s "tecleando" ---------- */
 function typingDelay() { return 1000 + Math.random() * 1000; }
 function typingDelaySlow() { return 2600 + Math.random() * 900; }
@@ -467,16 +496,18 @@ function submitAnswer(text) {
   step++;
   if (step < QUESTIONS.length) {
     if (step === 1) {
-      // Después del nombre: saludo personal + contrato de confianza, aviso y primera pregunta.
-      var firstName = answers.nombre.split(" ")[0];
+      // Después del nombre: Tata lo saluda con SU VOZ, generada en vivo con su nombre.
+      var firstName = cleanFirstName(answers.nombre) || "mi amor";
+      var greeting = "Hola " + firstName + ", mi amor, mi cielo, cariño.";
       setTimeout(function () {
-        brotherSaySeq([
-          { text: "Hola " + firstName + ",", audio: null },
-          { text: "te voy a hacer preguntas que tal vez sean un poco incómodas de responder.", audio: "t2.mp3" },
-          { text: "Pero si confías en mí, te prometo que valdrá la pena.", audio: "t3.mp3" }
-        ], function () {
-          addPrivacyChip();
-          setTimeout(function () { askQuestion(step); }, 700);
+        showTyping(); // teclea mientras se genera el audio
+        tataTtsUrl(greeting).then(function (url) {
+          hideTyping();
+          sayGreetingSeq(greeting, url);
+        }).catch(function () {
+          // Si la voz viva falla, el saludo sale como texto y el flujo sigue igual.
+          hideTyping();
+          sayGreetingSeq(greeting, null);
         });
       }, 350);
     } else {
