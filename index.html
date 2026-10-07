@@ -9,7 +9,7 @@
   html, body { height: 100%; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: #0b141a;
+    background: #0e0e0e;
     display: flex;
     justify-content: center;
   }
@@ -19,13 +19,13 @@
     height: 100dvh;
     display: flex;
     flex-direction: column;
-    background: #ECE5DD;
+    background: #0e0e0e;
     position: relative;
     overflow: hidden;
   }
   /* Header estilo WhatsApp */
   #chat-header {
-    background: #075E54;
+    background: #161616;
     color: #fff;
     display: flex;
     align-items: center;
@@ -76,33 +76,33 @@
     word-wrap: break-word;
     box-shadow: 0 1px 1px rgba(0,0,0,.18);
   }
-  .msg-row.in .bubble { background: #fff; border-top-left-radius: 0; }
+  .msg-row.in .bubble { background: #262626; color: #e9edef; border-top-left-radius: 0; }
   .msg-row.in .bubble::before {
     content: "";
     position: absolute; top: 0; left: -7px;
     border: 4px solid transparent;
-    border-top-color: #fff; border-right-color: #fff;
+    border-top-color: #262626; border-right-color: #262626;
   }
-  .msg-row.out .bubble { background: #DCF8C8; border-top-right-radius: 0; }
+  .msg-row.out .bubble { background: #005c4b; color: #e9edef; border-top-right-radius: 0; }
   .msg-row.out .bubble::before {
     content: "";
     position: absolute; top: 0; right: -7px;
     border: 4px solid transparent;
-    border-top-color: #DCF8C8; border-left-color: #DCF8C8;
+    border-top-color: #005c4b; border-left-color: #005c4b;
   }
   .msg-time {
     display: block;
     text-align: right;
     font-size: 11px;
-    color: #667781;
+    color: #8696a0;
     margin-top: 2px;
   }
   .msg-time .checks { color: #53bdeb; font-size: 12px; margin-left: 3px; }
   /* Aviso de privacidad tipo chip */
   .privacy-chip {
     align-self: center;
-    background: #FFF3C4;
-    color: #54656f;
+    background: #182229;
+    color: #ffd279;
     font-size: 12.5px;
     line-height: 1.45;
     text-align: center;
@@ -125,7 +125,7 @@
   @keyframes blink { 0%, 60%, 100% { opacity: .3; } 30% { opacity: 1; } }
   /* Barra de input */
   #input-bar {
-    background: #f0f0f0;
+    background: #161616;
     padding: 8px 10px;
     display: flex;
     align-items: center;
@@ -140,8 +140,8 @@
     padding: 11px 16px;
     font-size: 16px;
     font-family: inherit;
-    background: #fff;
-    color: #111b21;
+    background: #2b2b2b;
+    color: #e9edef;
   }
   #send-btn {
     width: 46px; height: 46px;
@@ -275,9 +275,7 @@ function brotherSay(text, then) {
 
 function startConversation() {
   setInputEnabled(false);
-  brotherSay("Hola. Soy Brother. Te voy a hacer unas preguntas para conocerte. ¿Empezamos?", function () {
-    // La primera respuesta del usuario confirma; luego va el aviso y la primera pregunta real.
-  });
+  brotherSay("Hola, ¿cómo te llamas?", null);
 }
 
 function askQuestion(i) {
@@ -339,7 +337,15 @@ function onSend() {
   answers[key] = text;
   step++;
   if (step < QUESTIONS.length) {
-    setTimeout(function () { askQuestion(step); }, 350);
+    if (step === 1) {
+      // Después del nombre: aviso de privacidad y luego la primera pregunta de verdad.
+      setTimeout(function () {
+        addPrivacyChip();
+        setTimeout(function () { askQuestion(step); }, 700);
+      }, 350);
+    } else {
+      setTimeout(function () { askQuestion(step); }, 350);
+    }
   } else {
     setTimeout(finishConversation, 350);
   }
