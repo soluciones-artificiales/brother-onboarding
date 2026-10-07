@@ -350,7 +350,7 @@ function brotherSay(text, then, audioSrc, slow) {
 
 function startConversation() {
   setInputEnabled(false);
-  brotherSay("Hola, ¿cómo te llamas?", null, "a1.mp3");
+  brotherSay("Hola, ¿cómo te llamas?", null, "t1.mp3");
 }
 
 function brotherSaySeq(items, then) {
@@ -374,7 +374,7 @@ function brotherSaySeq(items, then) {
   next(0);
 }
 
-var QUESTION_AUDIO = [null, "a4.mp3", "a5.mp3", "a6.mp3"];
+var QUESTION_AUDIO = [null, "t4.mp3", "t5.mp3", "t6.mp3"];
 var NUDGE_TEXT = "Me puedes contar hasta donde tú quieras, pero mientras más me cuentes, más te voy a poder ayudar.";
 
 /* 4 segundos después de una pregunta difícil, si aún no respondió: empujón cálido */
@@ -386,7 +386,7 @@ function scheduleNudge() {
     setTimeout(function () {
       hideTyping();
       var row = addBubble(PLAY_SVG + escapeHtml(NUDGE_TEXT), "in");
-      wirePlayButton(row, "a7.mp3");
+      wirePlayButton(row, "t7.mp3");
       setInputEnabled(true);
       waitingInput = true;
     }, typingDelay());
@@ -409,7 +409,7 @@ function answerHelpQuestion() {
   setTimeout(function () {
     hideTyping();
     var row = addBubble(PLAY_SVG + escapeHtml("Eso ya lo verás."), "in");
-    wirePlayButton(row, "a8.mp3");
+    wirePlayButton(row, "t8.mp3");
     setInputEnabled(true);
     waitingInput = true;
   }, typingDelay());
@@ -472,8 +472,8 @@ function submitAnswer(text) {
       setTimeout(function () {
         brotherSaySeq([
           { text: "Hola " + firstName + ",", audio: null },
-          { text: "te voy a hacer preguntas que tal vez sean un poco incómodas de responder.", audio: "a2.mp3" },
-          { text: "Pero si confías en mí, te prometo que valdrá la pena.", audio: "a3.mp3" }
+          { text: "te voy a hacer preguntas que tal vez sean un poco incómodas de responder.", audio: "t2.mp3" },
+          { text: "Pero si confías en mí, te prometo que valdrá la pena.", audio: "t3.mp3" }
         ], function () {
           addPrivacyChip();
           setTimeout(function () { askQuestion(step); }, 700);
